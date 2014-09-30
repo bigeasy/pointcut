@@ -1,0 +1,17 @@
+Pointcut
+
+Aspect oriented programming for prototypical JavaScript objects.
+
+    Discussion:     http://github.com/bigeasy/pointcut/issues/1
+
+    Documentation:  http://bigeasy.github.io/pointcut
+    Source:         http://github.com/bigeasy/pointcut
+    Issues:         http://github.com/bigeasy/pointcut/issues
+
+    Install:        `npm install pointcut`
+
+    License:        MIT
+
+To learn everything you want to know about Pointcut start here:
+
+    http://bigeasy.github.io/pointcut
