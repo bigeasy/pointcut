@@ -4,15 +4,15 @@ var fs = require('fs'),
 
 function Pointcut () {
     stream.Readable.call(this)
-    this.adornments = [{
-        adorn: function (pointcut, type, name, wrapped, original) {
+    this.advice = [{
+        advise: function (pointcut, type, name, wrapped, original) {
             return wrapped
         }
     }]
     this.prototype = function (type, name, method) {
         var pointcut = this
-        type.prototype[name] = this.adornments.reduce(function (wrapped, adornment) {
-            return adornment.adorn(pointcut, type, name, wrapped, method)
+        type.prototype[name] = this.advice.reduce(function (wrapped, advice) {
+            return advice.advise(pointcut, type, name, wrapped, method)
         }, method)
     }.bind(this)
     this._entries = []
