@@ -1,66 +1,58 @@
-var fs = require('fs')
+var fs = require('fs'),
+    stream = require('stream'),
+    util = require('util')
 
 function Pointcut () {
+    stream.Readable.call(this)
     this.adornments = [{
-        adorn: function (type, name, wrapped, original) {
+        adorn: function (pointcut, type, name, wrapped, original) {
             return wrapped
         }
     }]
     this.prototype = function (type, name, method) {
+        var pointcut = this
         type.prototype[name] = this.adornments.reduce(function (wrapped, adornment) {
-            return adornment.adorn(type, name, wrapped, method)
+            return adornment.adorn(pointcut, type, name, wrapped, method)
         }, method)
     }.bind(this)
+    this._entries = []
+    this._callbacks = []
+    this._blocked = true
 }
+util.inherits(Pointcut, stream.Readable)
 
-Pointcut.prototype._flush = function () {
-    this._log = fs.createWriteStream('pointcut.log', { flags: 'r+', })
-    this._flush = function () {
-        var draining
-        if (this._timeout) {
-            clearTimeout(this._timeout)
-            this._timeout = null
-        }
-        if (this._entries.length) {
-            this._entires.push('')
-            if (draining = !this._log.write(this._entries.join('\n'))) {
-                this._log.on('drain', this._flush.bind(this))
-            }
-            this._entries.length = 0
-        }
-        if (!draining && !this._shutdown) {
-            this._timeout = setTimeout(this._flush.bind(this), 250)
-        }
+Pointcut.prototype._read = function () {
+    var blocked = this._blocked
+    this._blocked = false
+    if (blocked) {
+        this._write()
     }
-    this._flush()
 }
 
-Pointcut.prototype.shutdown = function () {
-    this._shutdown = true
-    this._flush()
-    this._log.close()
+Pointcut.prototype._write = function () {
+    if (this._entries.length) {
+        this._entries.push('')
+        this._blocked = !this.push(this._entries.join('\n'), 'utf8')
+        this._entries.length = 0
+    }
+    if (this._shutdown) {
+        this._callbacks.forEach(function (callback) { callback() })
+    } else if (!this._blocked) {
+        this._timeout = setTimeout(this._write.bind(this), 250)
+    }
+}
+
+Pointcut.prototype.shutdown = function (callback) {
+    if (this._shutdown) {
+        callback()
+    } else {
+        this._callbacks.push(callback)
+        this._shutdown = true
+    }
 }
 
 Pointcut.prototype.log = function (object) {
     this._entries.push(JSON.stringify(object))
-}
-
-Pointcut.prototype.method = function (filename) {
-    var pointcut = this
-    return function (constructor, name, method) {
-        constructor.prototype[name] = function () {
-            var start = process.hrtime(), vargs = __slice.call(arguments), callback = vargs.pop()
-            method.apply(this, vargs.concat(function () {
-                pointcut.log({
-                    source: filename,
-                    'class': constructor.name,
-                    method: name,
-                    duration: process.hrtime(start)
-                })
-                callback.apply(this, __slice.call(arguments))
-            }))
-        }
-    }
 }
 
 module.exports = new Pointcut
