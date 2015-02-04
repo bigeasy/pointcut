@@ -1,4 +1,6 @@
-require('proof')(2, require('cadence')(function (step, assert) {
+require('proof')(2, require('cadence')(prove))
+
+function prove (async, assert) {
     var profiler = require('../../profiler')(__filename)
     var pointcut = {
         entries: [],
@@ -8,15 +10,28 @@ require('proof')(2, require('cadence')(function (step, assert) {
     }
     function Service () { }
     var method = function (value, callback) {
-        callback(null, value)
+        console.log('called', value)
+        setImmediate(done)
+
+        if (value != 1) {
+            this.method(value - 1, done)
+            this.method(value - 1, done)
+        }
+
+        var count = value == 1 ? 2 : 0
+        function done () {
+            if (++count == 3) {
+                callback(null, value)
+            }
+        }
     }
     Service.prototype.method = profiler.advise(pointcut, Service, 'method', method, method)
     var service = new Service
-    step(function () {
-        service.method(1, step())
+    async(function () {
+        service.method(3, async())
     }, function (value) {
         assert(value, 1, 'arguments forwarded')
         assert(pointcut.entries.length, 1, 'entry logged')
         assert.say(pointcut.entries)
     })
-}))
+}
