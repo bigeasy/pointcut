@@ -9,11 +9,7 @@
     "contributors":     [],
     "homepage":         "https://github.com/bigeasy/pointcut",
     "bugs":             "https://github.com/bigeasy/pointcut/issues",
-    "licenses":
-    [{
-                        "type": "MIT",
-                        "url": "http://github.com/bigeasy/pointcut/raw/master/LICENSE"
-    }],
+    "license":          "MIT",
     "main":             "pointcut.js",
     "repository":
     {
